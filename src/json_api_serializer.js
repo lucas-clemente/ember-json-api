@@ -133,6 +133,17 @@ DS.JsonApiSerializer = DS.RESTSerializer.extend({
   },
 
   // SERIALIZATION
+  
+  /**
+   * Include id when serializing
+   */
+  serialize: function(record, options) {
+    var json = this._super.apply(this, arguments); // Get default serialization
+    if (record.id) {
+      json.id = record.id;
+    }
+    return json;
+  },
 
   /**
    * Use "links" key, remove support for polymorphic type

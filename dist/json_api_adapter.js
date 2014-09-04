@@ -1,6 +1,6 @@
 /*! 
  * ember-json-api
- * Built on 2014-07-03
+ * Built on 2014-09-07
  * http://github.com/daliwali/ember-json-api
  * Copyright (c) 2014 Dali Zheng
  */
@@ -10,6 +10,9 @@ var get = Ember.get;
 var isNone = Ember.isNone;
 
 DS.JsonApiSerializer = DS.RESTSerializer.extend({
+  keyForRelationship: function(key) {
+    return key;
+  },
   /**
    * Patch the extractSingle method, since there are no singular records
    */
@@ -138,13 +141,25 @@ DS.JsonApiSerializer = DS.RESTSerializer.extend({
   },
 
   // SERIALIZATION
+  
+  /**
+   * Include id when serializing
+   */
+  serialize: function(record, options) {
+    var json = this._super.apply(this, arguments); // Get default serialization
+    if (record.id) {
+      json.id = record.id;
+    }
+    return json;
+  },
 
   /**
    * Use "links" key, remove support for polymorphic type
    */
   serializeBelongsTo: function(record, json, relationship) {
-    var key = relationship.key;
-    var belongsTo = get(record, key);
+    var attr = relationship.key;
+    var belongsTo = get(record, attr);
+    var key = this.keyForRelationship(attr);
 
     if (isNone(belongsTo)) return;
 
@@ -156,14 +171,15 @@ DS.JsonApiSerializer = DS.RESTSerializer.extend({
    * Use "links" key
    */
   serializeHasMany: function(record, json, relationship) {
-    var key = relationship.key;
+    var attr = relationship.key;
+    var key = this.keyForRelationship(attr);
 
     var relationshipType = DS.RelationshipChange.determineRelationshipType(record.constructor, relationship);
 
     if (relationshipType === 'manyToNone' ||
         relationshipType === 'manyToMany') {
       json.links = json.links || {};
-      json.links[key] = get(record, key).mapBy('id');
+      json.links[key] = get(record, attr).mapBy('id');
     }
   }
 });
